@@ -2,6 +2,7 @@ PROGRAM     = stm32-freqmeter
 CROSS       = arm-none-eabi
 LDSCRIPT    = stm32f103x8.ld
 SERIAL      = /dev/ttyUSB0
+LED_PC13   ?= 0
 OBJS        = freqmeter.o \
               usbcdc.o \
 
@@ -26,7 +27,7 @@ HEX         = $(PROGRAM).hex
 MAP         = $(PROGRAM).map
 DMP         = $(PROGRAM).out
 
-DEFS        = -DSTM32F1
+DEFS        = -DSTM32F1 -DUSE_LED_PC13=$(LED_PC13)
 INCS        = -Ilibopencm3/include/
 FP_FLAGS    = -msoft-float
 ARCH_FLAGS  = -mthumb -mcpu=cortex-m3 $(FP_FLAGS) -mfix-cortex-m3-ldrd

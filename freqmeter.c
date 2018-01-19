@@ -11,6 +11,14 @@
 
 #include "usbcdc.h"
 
+#if USE_LED_PC13
+#define LED_GPIO_PORT GPIOC
+#define LED_GPIO_PIN GPIO13
+#else
+#define LED_GPIO_PORT GPIOB
+#define LED_GPIO_PIN GPIO1
+#endif
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 #define PACKET_SIZE 64
@@ -266,12 +274,13 @@ void poll_command(void) {
 int main(void) {
   rcc_clock_setup_in_hse_8mhz_out_72mhz();
   rcc_periph_clock_enable(RCC_GPIOA); /* For MCO. */
-  rcc_periph_clock_enable(RCC_GPIOB); /* For LED, USB pull-up and TIM2. */
+  rcc_periph_clock_enable(RCC_GPIOB); /* For LED (on some boards), USB pull-up and TIM2. */
+  rcc_periph_clock_enable(RCC_GPIOC); /* For LED (on some boards) */
   rcc_periph_clock_enable(RCC_AFIO); /* For MCO. */
 
-  /* Setup PB1 for the LED. */
-  gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO1);
-  gpio_set(GPIOB, GPIO1);
+  /* Setup the LED. */
+  gpio_set_mode(LED_GPIO_PORT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, LED_GPIO_PIN);
+  gpio_set(LED_GPIO_PORT, LED_GPIO_PIN);
 
   /* Pull PA1 down to GND, which is adjascent to timer imput and can be used as an convenient return path. */
   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO1);
@@ -283,7 +292,7 @@ int main(void) {
 
   usbcdc_init();
 
-  gpio_clear(GPIOB, GPIO1);
+  gpio_clear(LED_GPIO_PORT, LED_GPIO_PIN);
 
   timer_setup();
   systick_ms_setup();
@@ -314,7 +323,7 @@ int main(void) {
     usbcdc_printf("%4lu.%06lu MHz %c [Hold: %s]\n\n",
       (freq - 65536) / 1000000,
       (freq - 65536) % 1000000,
-      gpio_get(GPIOB, GPIO1) ? '.' : ' ',
+      gpio_get(LED_GPIO_PORT, LED_GPIO_PIN) ? '.' : ' ',
       hold ? "ON " : "OFF"
     );
 
@@ -353,6 +362,6 @@ void sys_tick_handler(void) {
     timer_set_counter(TIM2, 1);
     timer_set_counter(TIM2, 0);
     freq_scratch = 0;
-    gpio_toggle(GPIOB, GPIO1);
+    gpio_toggle(LED_GPIO_PORT, LED_GPIO_PIN);
   }
 }
